@@ -6,7 +6,6 @@ var blogSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      unique: true,
     },
     description: {
       type: String,
@@ -18,7 +17,7 @@ var blogSchema = new mongoose.Schema(
     },
     numViews: {
       type: Number,
-      dafault: 0,
+      default: 0,
     },
     isLiked: {
       type: Boolean,
