@@ -1,7 +1,7 @@
 const { json } = require("body-parser");
 const Product = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
-const User=require("../models/userModel");
+const User = require("../models/userModel");
 const slugify = require("slugify");
 
 //!create product
@@ -141,7 +141,68 @@ const addToWishlist = asyncHandler(async (req, res) => {
   }
 });
 
-
+//!rating releted ctrl
+const rating = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  //console.log(_id,"hello");
+  const { star, prodId,comment } = req.body;
+  try {
+    const product = await Product.findById(prodId);
+    let alreadyRated = product.ratings.find(
+      (userId) => userId.postedby.toString() === _id.toString()
+    );
+    //console.log(alreadyRated,"hiiiiii");
+    if (alreadyRated) {
+      const updateRating = await Product.updateOne(
+        {
+          ratings: { $elemMatch: alreadyRated },
+        },
+        {
+          $set: { "ratings.$.star": star,"ratings.$.comment":comment},
+        },
+        {
+          new: true,
+        }
+      );
+      //res.json(updateRating);
+    } else {
+      const rateProduct = await Product.findByIdAndUpdate(
+        prodId,
+        {
+          $push: {
+            ratings: {
+              star: star,
+              postedby: _id,
+              comment:comment,
+            },
+          },
+        },
+        {
+          new: true,
+        }
+      );
+      //res.json(rateProduct);
+    }
+    const getallratings = await Product.findById(prodId);
+    const totalRating = getallratings.ratings.length;
+    let ratingsum = getallratings.ratings
+      .map((item) => item.star)
+      .reduce((prev, curr) => prev+curr, 0);
+    let actualRating = Math.round(ratingsum / totalRating);
+    let finalproduct = await Product.findByIdAndUpdate(
+      prodId,
+      {
+        totalrating: actualRating,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(finalproduct);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
 
 module.exports = {
   createProduct,
@@ -150,4 +211,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   addToWishlist,
+  rating,
 };
