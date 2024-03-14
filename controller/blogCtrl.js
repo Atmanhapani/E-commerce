@@ -34,6 +34,7 @@ const updateBlog = asyncHandler(async (req, res) => {
 const getBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
+  const getblog = await Blog.findById(id).populate("likes").populate("dislikes");
   try {
     const getBlog = await Blog.findById(id);
     const updateViews = await Blog.findByIdAndUpdate(
@@ -45,7 +46,7 @@ const getBlog = asyncHandler(async (req, res) => {
         new: true,
       }
     );
-    res.json(updateViews);
+    res.json(getblog);
   } catch (error) {
     throw new Error(erorr);
   }
@@ -236,5 +237,5 @@ module.exports = {
   getAllBLogs,
   deleteBlog,
   liketheBlog,
-  disliketheBlog
+  disliketheBlog,
 };
