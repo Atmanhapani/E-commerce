@@ -1,6 +1,9 @@
 const { json } = require("body-parser");
 const Product = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
+const validateMongoDbId = require("../utils/validateMongodbid");
+const cloudinaryUploadImg = require("../utils/cloudinary");
+const fs=require("fs");
 const User = require("../models/userModel");
 const slugify = require("slugify");
 
@@ -145,7 +148,7 @@ const addToWishlist = asyncHandler(async (req, res) => {
 const rating = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   //console.log(_id,"hello");
-  const { star, prodId,comment } = req.body;
+  const { star, prodId, comment } = req.body;
   try {
     const product = await Product.findById(prodId);
     let alreadyRated = product.ratings.find(
@@ -158,7 +161,7 @@ const rating = asyncHandler(async (req, res) => {
           ratings: { $elemMatch: alreadyRated },
         },
         {
-          $set: { "ratings.$.star": star,"ratings.$.comment":comment},
+          $set: { "ratings.$.star": star, "ratings.$.comment": comment },
         },
         {
           new: true,
@@ -173,7 +176,7 @@ const rating = asyncHandler(async (req, res) => {
             ratings: {
               star: star,
               postedby: _id,
-              comment:comment,
+              comment: comment,
             },
           },
         },
@@ -187,7 +190,7 @@ const rating = asyncHandler(async (req, res) => {
     const totalRating = getallratings.ratings.length;
     let ratingsum = getallratings.ratings
       .map((item) => item.star)
-      .reduce((prev, curr) => prev+curr, 0);
+      .reduce((prev, curr) => prev + curr, 0);
     let actualRating = Math.round(ratingsum / totalRating);
     let finalproduct = await Product.findByIdAndUpdate(
       prodId,
@@ -204,6 +207,46 @@ const rating = asyncHandler(async (req, res) => {
   }
 });
 
+//!upload images
+const uploadImages = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongoDbId(id);
+  try {
+    const uploader = (path) => cloudinaryUploadImg(path, "images");
+    const urls = [];
+    const files = req.files;
+    //console.log(files);
+    for (const file of files) {
+      const { path } = file;
+      console.log(path);
+      const newpath = await uploader(path);
+      console.log(newpath);
+      urls.push(newpath);
+      try {
+        // Attempt to delete the file synchronously
+        fs.unlinkSync(path);
+        console.log('File deleted successfully');
+      } catch (err) {
+        console.error('Error deleting file:', err);
+      }
+    }
+    const findProduct = await Product.findByIdAndUpdate(
+      id,
+      {
+        images: urls.map((file) => {
+          return file;
+        }),
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(findProduct);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 module.exports = {
   createProduct,
   getaProduct,
@@ -212,4 +255,5 @@ module.exports = {
   deleteProduct,
   addToWishlist,
   rating,
+  uploadImages,
 };

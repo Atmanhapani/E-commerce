@@ -39,15 +39,11 @@ var blogSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    image: {
-      type: String,
-      default:
-        "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fblog&psig=AOvVaw0ixexOUdqffjfLYsh74YFD&ust=1710360001622000&source=images&cd=vfe&opi=89978449&ved=0CBMQjRxqFwoTCNjJwdTB74QDFQAAAAAdAAAAABAE",
-    },
-    auther: {
+    author: {
       type: String,
       default: "Admin",
     },
+    images:[],
   },
   {
     toJSON: {
